@@ -8,6 +8,7 @@ import {DieModal} from "./DieModal";
 import Button from "@material-ui/core/Button";
 import Box from "@material-ui/core/Box";
 import {Die} from "./Die";
+import Paper from "@material-ui/core/Paper";
 
 export function ActiveSkill(props) {
   const [{dice, mode, handler}, dispatch] = useRollContext();
@@ -27,9 +28,9 @@ export function ActiveSkill(props) {
     rollManager.executeSkill();
   }
 
-  return <Container>
+  return <Paper>
     You will be creating:
     {diceToCreate.map(die => <Die die={die} key={die.id} onClick={() => {}}/>)}
     <Button onClick={onExecuteClicked}>Execute</Button>
-  </Container>
+  </Paper>
 }

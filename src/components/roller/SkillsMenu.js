@@ -24,7 +24,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-export function DiceBoxMenu(props) {
+export function SkillsMenu(props) {
   const [{dice, mode}, dispatch] = useRollContext();
   const rollManager = new RollManager(dispatch);
   const [modalOpen, setModalOpen] = React.useState(false);
@@ -74,43 +74,12 @@ export function DiceBoxMenu(props) {
   const classes = useStyles();
 
   return <Paper className={classes.root}>
-    <form.Form>
-      <Grid container spacing={2}>
-        <Grid item xs={3}>
-          <TextField {...fields.strength} margin="normal"/>
-        </Grid>
-        <Grid item xs={3}>
-          <TextField {...fields.agility} margin="normal"/>
-        </Grid>
-        <Grid item xs={3}>
-          <TextField {...fields.magic} margin="normal"/>
-        </Grid>
-        <Grid item xs={3}>
-          <TextField {...fields.heroic} margin="normal"/>
-        </Grid>
-      </Grid>
-
-      <DieModal open={modalOpen} onSubmit={onModalSubmit} onClose={onModalClose}/>
-
-      <Button variant="contained" color="primary" onClick={rollClicked} className={classes.button}>
-        <CasinoIcon />
-        Roll
-      </Button>
-      <Button variant="contained" onClick={addDieClicked} className={classes.button}>
-        <AddIcon />
-        Add Die
-      </Button>
-      {!!dice.length &&
-      <Box display="inline">
-        <Button variant="contained" color="secondary" onClick={clearClicked} className={classes.button}>
-          <ClearIcon />
-          Clear
-        </Button>
-        <Button variant="contained" onClick={onSortClicked} className={classes.button}>
-          <SortIcon />
-          Sort
-        </Button>
-      </Box>}
-    </form.Form>
+      {dice.length > 1 &&
+      <FormControlLabel
+        control={
+          <Switch checked={mode===RollModes.MERGE} onChange={mergeModeClicked} value="createHeroic" />
+        }
+        label="Create Heroic"
+      />}
   </Paper>
 }
