@@ -8,13 +8,9 @@ import {DiceMerger} from "./DiceMerger";
 export function DiceBox(props) {
   const [{dice}] = useRollContext();
 
-  const dieKey = (index, die) => {
-    return `${index}:${die.type}:${die.value}`;
-  }
-
   return <Container>
     <DiceBoxMenu/>
-    {dice.map((die, i) => <Die key={dieKey(i, die)} index={i}/>)}
+    {dice.map((die, i) => <Die key={die.id} index={i}/>)}
     <DiceMerger />
   </Container>
 }

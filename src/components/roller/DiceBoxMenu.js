@@ -1,4 +1,4 @@
-import {RollManager, useRollContext} from "../../context/RollContext";
+import {RollManager, RollModes, useRollContext} from "../../context/RollContext";
 import React from "react";
 import {useForm} from "react-hooks-useform";
 import Container from "@material-ui/core/Container";
@@ -12,7 +12,8 @@ import CasinoIcon from '@material-ui/icons/Casino';
 import AddIcon from '@material-ui/icons/Add';
 import SortIcon from '@material-ui/icons/Sort';
 import ClearIcon from '@material-ui/icons/Clear';
-import MergeTypeIcon from '@material-ui/icons/MergeType';
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import Switch from "@material-ui/core/Switch";
 
 const useStyles = makeStyles(theme => ({
   button: {
@@ -21,7 +22,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 export function DiceBoxMenu(props) {
-  const [{dice}, dispatch] = useRollContext();
+  const [{dice, mode}, dispatch] = useRollContext();
   const rollManager = new RollManager(dispatch);
   const [modalOpen, setModalOpen] = React.useState(false);
 
@@ -56,8 +57,16 @@ export function DiceBoxMenu(props) {
   };
 
   const onModalSubmit = (die) => {
-    rollManager.addDice([{type: die.type.value, value: die.value.value}]);
+    rollManager.addDice([{type: die.type.value, value: die.value.value, selected: 'false'}]);
   };
+
+  const mergeModeClicked = () => {
+    if(mode===RollModes.MERGE) {
+      rollManager.setMode(RollModes.NORMAL);
+    } else {
+      rollManager.setMode(RollModes.MERGE);
+    }
+  }
 
   const classes = useStyles();
 
@@ -100,11 +109,12 @@ export function DiceBoxMenu(props) {
         </Button>
       </Box>}
       {dice.length > 1 &&
-        <Button variant="contained" onClick={() => {}} className={classes.button}>
-          <MergeTypeIcon />
-          Create Heroic
-        </Button>
-      }
+      <FormControlLabel
+        control={
+          <Switch checked={mode===RollModes.MERGE} onChange={mergeModeClicked} value="createHeroic" />
+        }
+        label="Create Heroic"
+      />}
 
     </form.Form>
   </Container>

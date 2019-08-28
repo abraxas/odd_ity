@@ -6,11 +6,12 @@ import {RollManager, useRollContext} from "../../context/RollContext";
 export function Die(props) {
   const {index} = props;
 
-  const [{dice}, dispatch] = useRollContext();
-  const rollManager = new RollManager(dispatch);
-
   const [modalOpen, setModalOpen] = React.useState(false);
+
+  const [{dice, mode}, dispatch] = useRollContext();
   const roll = dice[index];
+  const rollManager = new RollManager(dispatch.bind(dispatch));
+
 
   const dieColor = ({
     strength: '#d3c200',
@@ -34,9 +35,17 @@ export function Die(props) {
     lineHeight: "30px",
   };
 
+  const styleSelected = {...style,
+    border: "2px solid green",
+  };
+
 
   const onClick = () => {
-    setModalOpen(true);
+    if(rollManager.clickShouldSelect(mode)) {
+      rollManager.selectDie(index);
+    } else {
+      setModalOpen(true);
+    }
   };
   const onModalClose = () => {
     setModalOpen(false);
@@ -44,12 +53,13 @@ export function Die(props) {
 
   const onModalSubmit = (die) => {
     rollManager.updateDie(index, {type: die.type.value, value: die.value.value});
-    // dispatch({type: 'EDIT_DIE', index, die: {type: die.type.value, value: die.value.value}});
   };
 
+  console.dir(roll);
+
   return <Box display="inline">
-    <DieModal open={modalOpen} die={dice[index]} onSubmit={onModalSubmit} onClose={onModalClose} isUpdate={true}/>
-    <div onClick={onClick} style={style}>
+    <DieModal open={modalOpen} die={roll} onSubmit={onModalSubmit} onClose={onModalClose} isUpdate={true}/>
+    <div onClick={onClick} style={roll.selected ? styleSelected : style}>
       {roll.value}
     </div>
   </Box>;

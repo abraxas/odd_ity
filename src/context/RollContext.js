@@ -3,6 +3,8 @@ import {useReducer, useContext} from "react";
 import times from "lodash/times";
 import sortBy from "lodash/sortBy";
 import isEqual from "lodash/isEqual";
+import cloneDeep from "lodash/cloneDeep";
+import uuidv1 from "uuid/v1";
 
 export const RollContext = React.createContext();
 
@@ -15,13 +17,17 @@ function rollReducer(state, action) {
     return {
       type,
       value: roll(),
+      selected: false,
+      id: uuidv1(),
     }
   }
+
+  const {index} = action;
+  let newState;
 
   switch(action.type){
     case 'ROLL_DICE':
       const newDice = [];
-
       Object.keys(action.dice).forEach((type) => {
         const count = action.dice[type];
         times(count, () => {
@@ -36,9 +42,17 @@ function rollReducer(state, action) {
     case 'ROLL_NEW_DICE':
       return rollReducer(rollReducer(state, {type: 'CLEAR'}), {...action, type: 'ROLL_DICE'});
     case 'EDIT_DIE':
-      const {index, die} = action;
-      state.dice[index] = die;
-      return state;
+      newState = cloneDeep(state);
+      const {die} = action;
+      newState.dice[index] = die;
+      return newState;
+    case 'SELECT_DIE':
+      newState = cloneDeep(state);
+      const {set} = action;
+      newState.dice[index].selected = (set !== undefined) ? set : !newState.dice[index].selected;
+      return newState;
+    case 'SET_MODE':
+      return {...state, mode: action.mode };
     case 'SORT':
       const typeOrder = {
         "strength": 1,
@@ -81,14 +95,26 @@ export class RollManager {
   }
 
   rollDice(dice) { this.dispatch({type: 'ROLL_DICE', dice}); }
-  addDice(dice) { this.dispatch({type: 'ADD_DICE', dice}); }
+  addDice(dice) {
+    dice.forEach(die => {
+      die.id = uuidv1();
+    });
+    this.dispatch({type: 'ADD_DICE', dice});
+  }
   clearDice() { this.dispatch({type: 'CLEAR'}); }
+
+  setMode(mode) { this.dispatch({type: 'SET_MODE', mode,}); }
+
   updateDie(index, die) {
     this.dispatch({type: 'EDIT_DIE', index, die });
   }
+  selectDie(index, set) {
+    this.dispatch({type: 'SELECT_DIE', index, set });
+  }
 
   sort() { this.dispatch({type: 'SORT'}); }
-  clickShouldSelect(mode) { return [RollModes.MERGE].indexOf(mode) > 0 }
+  clickShouldSelect(mode) {
+    return [RollModes.MERGE].indexOf(mode) >= 0 }
 
 
 }
