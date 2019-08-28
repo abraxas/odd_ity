@@ -57,7 +57,7 @@ export function DiceBoxMenu(props) {
   };
 
   const onModalSubmit = (die) => {
-    rollManager.addDice([{type: die.type.value, value: die.value.value, selected: 'false'}]);
+    rollManager.addDice([{type: die.type.value, value: die.value.value, selected: false}]);
   };
 
   const mergeModeClicked = () => {

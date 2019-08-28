@@ -4,9 +4,52 @@ import times from "lodash/times";
 import sortBy from "lodash/sortBy";
 import isEqual from "lodash/isEqual";
 import cloneDeep from "lodash/cloneDeep";
+import minBy from "lodash/minBy";
+import filter from "lodash/filter";
+import concat from "lodash/concat";
 import uuidv1 from "uuid/v1";
+import findIndex from "lodash/findIndex";
 
 export const RollContext = React.createContext();
+
+export const RollModes = {
+  NORMAL: 0,
+  MERGE: 1,
+};
+
+
+function makeDie(type, value) {
+  return {
+    type,
+    value,
+    selected: false,
+    id: uuidv1(),
+  }
+}
+
+const mergeHeroicHandler = {
+  canSelect: (dice, index) => {
+    const selectedDice = filter(dice, x=>x.selected);
+    return selectedDice.length < 2;
+  },
+  expectedResult: (dice) => {
+    const selectedDice = filter(dice, x=>x.selected);
+    const newDice = [];
+    const value = minBy(selectedDice, (x) => x.value).value;
+    return [makeDie('heroic', value)];
+  },
+  canExecute: (dice) => {
+    const selectedDice = filter(dice, x=>x.selected);
+    return selectedDice.length == 2;
+  },
+  reducer: (dice) => {
+    return concat(filter(dice, x => !x.selected), mergeHeroicHandler.expectedResult(dice));
+  },
+};
+
+const handlers = {};
+handlers[RollModes.MERGE] = mergeHeroicHandler;
+
 
 function roll() {
   return Math.floor(Math.random() *  (5)) + 1;
@@ -22,8 +65,15 @@ function rollReducer(state, action) {
     }
   }
 
-  const {index} = action;
+  const {id} = action;
+  const index = id && findIndex(state.dice, x => x.id===id);
+
+
+  const handler = handlers[state.mode];
+  const rollManager = new RollManager()
   let newState;
+
+
 
   switch(action.type){
     case 'ROLL_DICE':
@@ -49,10 +99,25 @@ function rollReducer(state, action) {
     case 'SELECT_DIE':
       newState = cloneDeep(state);
       const {set} = action;
-      newState.dice[index].selected = (set !== undefined) ? set : !newState.dice[index].selected;
+      if(!rollManager.clickShouldSelect(state.mode)) { return state; }
+
+      const selectedDie = newState.dice[index];
+      if(selectedDie.selected || handler.canSelect(state.dice, index)) {
+        newState.dice[index].selected = (set !== undefined) ? set : !selectedDie.selected;
+      }
       return newState;
     case 'SET_MODE':
-      return {...state, mode: action.mode };
+      newState = cloneDeep(state);
+      if(!(new RollManager()).clickShouldSelect(action.mode)) {
+        newState.dice.forEach(die => die.selected = false);
+      }
+      const tentativeHandler = handlers[action.mode];
+
+      return {...newState, mode: action.mode, handler: tentativeHandler };
+    case 'EXECUTE_SKILL':
+      newState = cloneDeep(state);
+      newState.dice = handler.reducer(state.dice);
+      return {...newState, mode: action.NORMAL, handler: undefined};
     case 'SORT':
       const typeOrder = {
         "strength": 1,
@@ -72,15 +137,11 @@ function rollReducer(state, action) {
   }
 }
 
-export const RollModes = {
-  NORMAL: 0,
-  MERGE: 1,
-};
-
 export const RollProvider = ({children}) => (
   <RollContext.Provider value={useReducer(rollReducer, {
     dice: [],
     mode: RollModes.NORMAL,
+    handler: undefined,
   })}>
     {children}
   </RollContext.Provider>
@@ -105,11 +166,15 @@ export class RollManager {
 
   setMode(mode) { this.dispatch({type: 'SET_MODE', mode,}); }
 
-  updateDie(index, die) {
-    this.dispatch({type: 'EDIT_DIE', index, die });
+  updateDie(id, die) {
+    this.dispatch({type: 'EDIT_DIE', id, die });
   }
-  selectDie(index, set) {
-    this.dispatch({type: 'SELECT_DIE', index, set });
+  selectDie(id, set) {
+    this.dispatch({type: 'SELECT_DIE', id, set });
+  }
+
+  executeSkill() {
+    this.dispatch({type: 'EXECUTE_SKILL'});
   }
 
   sort() { this.dispatch({type: 'SORT'}); }
